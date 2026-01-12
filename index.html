@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PINEAPPLE MYSTERY - Beta 0.9</title>
+<style>
+  :root {
+    --bg-color: #050505;
+    --accent-red: #cc0000;
+    --pine-yellow: #f4d03f;
+  }
+
+  body { 
+    font-family: 'Courier New', Courier, monospace; background: var(--bg-color);
+    margin: 0; padding: 0; text-align: center; color: #e0e0e0; overflow-x: hidden;
+  }
+
+  /* --- 버전 표시 --- */
+  .version-tag {
+    position: fixed; top: 40px; right: 20px; font-size: 12px; color: #555;
+    z-index: 5; font-weight: bold; letter-spacing: 1px;
+  }
+
+  /* --- 흐르는 띠 --- */
+  .ticker-wrap {
+    width: 100%; overflow: hidden; background: var(--pine-yellow); color: #000;
+    padding: 5px 0; font-weight: 900; font-size: 14px; position: fixed; z-index: 10;
+  }
+  .ticker-top { top: 0; } .ticker-bottom { bottom: 0; }
+  .ticker { display: inline-block; white-space: nowrap; animation: ticker 25s linear infinite; }
+  @keyframes ticker { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+
+  /* --- 해킹 로딩 화면 --- */
+  #hacking-screen {
+    display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: #000; z-index: 100; flex-direction: column; justify-content: center; align-items: center;
+  }
+  .hacking-text { color: #fff; font-size: 20px; letter-spacing: 5px; margin-bottom: 20px; }
+  .progress-container { width: 250px; height: 4px; background: #222; border-radius: 2px; overflow: hidden; }
+  .progress-bar { width: 0%; height: 100%; background: #fff; transition: width 0.1s; }
+
+  /* --- 레이아웃 --- */
+  .content-wrapper {
+    min-height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center;
+    padding: 50px 20px; box-sizing: border-box;
+  }
+
+  #menu, #draw-area, #result, #final-screen { 
+    background: rgba(15, 15, 15, 0.98); padding: 40px; border-radius: 20px; 
+    border: 1px solid #333; width: 100%; max-width: 400px; box-sizing: border-box;
+  }
+
+  .main-btn {
+    background: #111; color: #fff; border: 1px solid #444; padding: 15px;
+    border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 15px;
+  }
+  .main-btn:hover { border-color: var(--pine-yellow); }
+
+  #result { background: #f0f0f0; color: #111; }
+  #role { font-size: 45px; font-weight: 900; }
+  #skill { font-size: 32px; font-weight: bold; margin: 15px 0; }
+  .skill-gunslinger { background: linear-gradient(45deg, #FF1801, #3712FF); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .skill-yellow { color: #b8860b; } .skill-pink { color: #FB66FF; }
+
+  #log-box {
+    display: none; text-align: left; background: #111; padding: 20px; 
+    border-radius: 10px; font-size: 13px; color: #aaa; margin-top: 20px; line-height: 1.6;
+  }
+
+  .switch { position: relative; display: inline-block; width: 44px; height: 20px; vertical-align: middle; }
+  .switch input { opacity: 0; }
+  .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #333; transition: .4s; border-radius: 20px; }
+  .slider:before { position: absolute; content: ""; height: 14px; width: 14px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
+  input:checked + .slider { background-color: var(--accent-red); }
+  input:checked + .slider:before { transform: translateX(24px); }
+</style>
+</head>
+<body>
+
+<div class="version-tag">Beta.0.9</div>
+
+<div class="ticker-wrap ticker-top">
+  <div class="ticker">
+    CAUTION 🍍 SYSTEM HACKING 🍍 PINEAPPLE HQ 🍍 CLASSIFIED 🍍 CAUTION 🍍 SYSTEM HACKING 🍍 PINEAPPLE HQ 🍍 CLASSIFIED 🍍
+  </div>
+</div>
+
+<div id="hacking-screen">
+  <div class="hacking-text" id="status-text">SYSTEM HACKING...</div>
+  <div class="progress-container"><div class="progress-bar" id="p-bar"></div></div>
+</div>
+
+<div class="content-wrapper">
+  <div id="menu">
+    <h1 style="color:var(--pine-yellow); letter-spacing:5px;">PINEAPPLE BETA</h1>
+    <div style="margin:20px 0;">
+      <span style="font-size: 12px; color: #555;">SPECIAL SKILLS</span>
+      <label class="switch"><input type="checkbox" id="useSkills" checked><span class="slider"></span></label>
+    </div>
+    <label style="color:#888;">PLAYER COUNT : <input type="number" id="playerCount" min="4" max="20" value="6" style="background:none; border:none; border-bottom:1px solid #444; color:#fff; width:40px; text-align:center;"></label>
+    <button onclick="runHacking()" class="main-btn" style="color:var(--pine-yellow);">INITIALIZE</button>
+  </div>
+
+  <div id="draw-area" style="display:none;">
+    <div id="playerNum" style="font-size: 24px; margin-bottom: 20px; color: #555;"></div>
+    <button onclick="draw()" class="main-btn" style="background:var(--accent-red); border:none;">ACCESS ROLE</button>
+  </div>
+
+  <div id="result">
+    <div id="role"></div>
+    <div id="skill"></div>
+    <div id="desc" style="font-size:16px; color:#444; margin-bottom:25px;"></div>
+    <button onclick="nextPlayer()" style="background:#000; color:#fff; border:none; width:100%; padding:15px; border-radius:5px; cursor:pointer;">CONFIRM</button>
+  </div>
+
+  <div id="final-screen">
+    <div style="color: #555; font-size: 14px; margin-bottom: 10px;">MISSION COMPLETE</div>
+    <div id="finalType" style="font-size:50px; font-weight:900; margin-bottom:10px;"></div>
+    <div id="finalDetail" style="font-size: 16px; color: #888; margin-bottom:30px;"></div>
+    
+    <button onclick="showLog()" class="main-btn" style="font-size:12px;">VIEW DATA LOG</button>
+    <div id="log-box"></div>
+    <button onclick="location.reload()" class="main-btn" style="background:none; border-color:#222; color:#333;">REBOOT</button>
+  </div>
+</div>
+
+<div class="bottom-info">
+  <div class="pine-logo">🍍</div>
+  <h2 style="color:var(--pine-yellow);">PINEAPPLE DATABASE</h2>
+  <div class="data-box">
+    > ACCESS GRANTED...<br>
+    > SUBJECT: MURDER CASE #2024<br>
+    > STATUS: ENCRYPTED<br><br>
+    [SYSTEM GUIDE]<br>
+    - 시민: 쥐죽은 듯이 숨으십시오. 최대 2명만이 특별한 힘을 가집니다.<br>
+    - 보안관/의사: 당신들의 무능함은 팀의 패배를 부릅니다.<br>
+    - 파인애플 알러지 주의.
+  </div>
+</div>
+
+<div class="ticker-wrap ticker-bottom">
+  <div class="ticker">
+    Access Granted 🍍 Data Encrypted 🍍 Pineapple Inc 🍍 Access Granted 🍍 Data Encrypted 🍍 Pineapple Inc 🍍
+  </div>
+</div>
+
+<script>
+const skillData = {
+  머더: [{ name: "방탄", desc: "한 번 공격을 버팁니다. (2목숨)입니다." }, { name: "가방", desc: "죽인 대상이 살아있는 것처럼 행동하다가 마지막에 사망합니다. (1명)입니다." }, { name: "총잡이", desc: "보안관과 같은 방식으로 처치합니다.", special: "gunslinger" }],
+  보안관: [{ name: "강인한", desc: "목숨이 2개가 됩니다.입니다." }, { name: "마피아", desc: "머더와 모든 시민을 제거하면 즉시 승리합니다.", special: "yellow" }],
+  의사: [{ name: "자가치유", desc: "자신을 치료할 수 있습니다. (1회)입니다." }, { name: "전문 의사", desc: "최대 2명까지 치료할 수 있습니다.입니다." }],
+  시민: [{ name: "스파이", desc: "시민/보안관을 죽일수록 최대 2목숨까지 증가합니다. 머더를 죽이면 자신도 사망하며 시민 승리입니다.", special: "yellow" }, { name: "퍼블win", desc: "가장 먼저 머더에게 죽으면 즉시 시민 승리입니다.", special: "pink" }, { name: "패링", desc: "한 번 공격을 막아냅니다.입니다." }]
+};
+
+const murderTypes = [
+  { name: "Standard", weight: 60, desc: "추가 능력이 포함된 기본 라운드입니다.", class: "type-standard" },
+  { name: "Chillsear", weight: 30, desc: "의사가 치료할 수 없는 암살 라운드입니다.", class: "type-chillsear" },
+  { name: "Zombie", weight: 10, desc: "죽은 자가 좀비가 되는 감염 라운드입니다.", class: "type-zombie" }
+];
+
+let totalPlayers, current, roles, roundMurderType, useSkills, assignedSkills, gameLog = [];
+
+function runHacking() {
+  document.getElementById("hacking-screen").style.display = "flex";
+  let p = 0;
+  const bar = document.getElementById("p-bar");
+  const interval = setInterval(() => {
+    p += Math.random() * 5;
+    if (p >= 100) {
+      p = 100;
+      clearInterval(interval);
+      setTimeout(startGame, 500);
+    }
+    bar.style.width = p + "%";
+  }, 50);
+}
+
+function startGame() {
+  document.getElementById("hacking-screen").style.display = "none";
+  totalPlayers = parseInt(document.getElementById("playerCount").value);
+  useSkills = document.getElementById("useSkills").checked;
+  
+  roles = ["머더", "보안관", "의사"];
+  for (let i = 4; i <= totalPlayers; i++) roles.push("시민");
+  roles.sort(() => Math.random() - 0.5);
+
+  const pool = {
+    머더: [...skillData.머더].sort(() => Math.random() - 0.5),
+    보안관: [...skillData.보안관].sort(() => Math.random() - 0.5),
+    의사: [...skillData.의사].sort(() => Math.random() - 0.5),
+    시민: [...skillData.시민].sort(() => Math.random() - 0.5)
+  };
+
+  let cIdxs = [];
+  roles.forEach((r, i) => { if(r === "시민") cIdxs.push(i); });
+  cIdxs.sort(() => Math.random() - 0.5);
+  let luckyOnes = cIdxs.slice(0, 2);
+
+  const rand = Math.random() * 100;
+  let cum = 0;
+  for (const t of murderTypes) { cum += t.weight; if (rand < cum) { roundMurderType = t; break; } }
+
+  assignedSkills = roles.map((role, idx) => {
+    if (!useSkills) return { name: "무능력", desc: "능력이 없습니다.입니다." };
+    if (role === "머더") {
+      return (roundMurderType.name === "Standard" && pool.머더.length > 0) ? pool.머더.pop() : { name: "SPECIAL TYPE", desc: "특수 타입입니다. 정체는 마지막에 공개됩니다." };
+    }
+    if (role === "시민") {
+      if (luckyOnes.includes(idx) && pool.시민.length > 0) return pool.시민.pop();
+      return { name: "무능력", desc: "능력이 없습니다.입니다." };
+    }
+    return pool[role].length > 0 ? pool[role].pop() : { name: "무능력", desc: "능력이 없습니다.입니다." };
+  });
+
+  gameLog = roles.map((r, i) => `[Player ${i+1}] ${r} - ${assignedSkills[i].name}`);
+
+  current = 0;
+  document.getElementById("menu").style.display = "none";
+  document.getElementById("draw-area").style.display = "block";
+  document.getElementById("playerNum").textContent = `IDENTIFYING PLAYER 1...`;
+  window.scrollTo(0, 0);
+}
+
+function draw() {
+  const role = roles[current];
+  const chosen = assignedSkills[current];
+  const rDiv = document.getElementById("role");
+  const sDiv = document.getElementById("skill");
+  rDiv.textContent = role;
+  rDiv.style.color = role === "머더" ? "#cc0000" : role === "보안관" ? "#2b57ff" : role === "의사" ? "#28a745" : "#666";
+  sDiv.textContent = chosen.name;
+  sDiv.className = chosen.special === "gunslinger" ? "skill-gunslinger" : chosen.special === "yellow" ? "skill-yellow" : chosen.special === "pink" ? "skill-pink" : "";
+  document.getElementById("desc").textContent = chosen.desc;
+  document.getElementById("draw-area").style.display = "none";
+  document.getElementById("result").style.display = "block";
+}
+
+function nextPlayer() {
+  current++;
+  if (current >= totalPlayers) {
+    document.getElementById("result").style.display = "none";
+    document.getElementById("final-screen").style.display = "block";
+    const tElt = document.getElementById("finalType");
+    tElt.textContent = useSkills ? roundMurderType.name : "GAME START";
+    tElt.style.color = useSkills ? (roundMurderType.name === "Zombie" ? "#32CD32" : roundMurderType.name === "Chillsear" ? "#87CEEB" : "#cc0000") : "#fff";
+    document.getElementById("finalDetail").textContent = useSkills ? roundMurderType.desc : "능력 없이 진행되는 클래식 모드입니다.";
+    if ("vibrate" in navigator) navigator.vibrate(200);
+    return;
+  }
+  document.getElementById("result").style.display = "none";
+  document.getElementById("draw-area").style.display = "block";
+  document.getElementById("playerNum").textContent = `IDENTIFYING PLAYER ${current + 1}...`;
+}
+
+function showLog() {
+  const box = document.getElementById("log-box");
+  box.innerHTML = "> DATABASE RECOVERY COMPLETE:<br><br>" + gameLog.join("<br>");
+  box.style.display = "block";
+}
+</script>
+</body>
+</html>
